@@ -1,5 +1,8 @@
+# Ignore node modules
 node_modules/
 client/node_modules/
 server/node_modules/
+
+# Ignore build folders
 client/build/
 server/build/
