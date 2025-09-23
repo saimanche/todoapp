@@ -1,46 +1,58 @@
-const taskService = require('../services/taskService');
+const Task = require('../models/task');
 
-const getTasks = async (req, res) => {
+// Get all tasks
+exports.getTasks = async (req, res) => {
   try {
-    const data = await taskService.getAllTasks();
-    res.json(data);
+    const tasks = await Task.find().sort({ updatedAt: -1, createdAt: -1 });
+    res.json(tasks);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 };
 
-const createTask = async (req, res) => {
+// Get counts
+exports.getCounts = async (req, res) => {
   try {
-    const { name, description } = req.body;
-    if (!name) return res.status(400).json({ error: 'Task name required' });
-    const task = await taskService.addTask({ name, description });
-    res.json(task);
+    const total = await Task.countDocuments();
+    const completed = await Task.countDocuments({ completed: true });
+    const pending = await Task.countDocuments({ completed: false });
+    res.json({ total, pending, completed });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch counts' });
   }
 };
 
-const editTask = async (req, res) => {
+// Create task
+exports.createTask = async (req, res) => {
   try {
-    const task = await taskService.updateTask(req.params.id, req.body);
-    res.json(task);
+    const task = new Task(req.body);
+    const savedTask = await task.save();
+    res.json(savedTask);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to create task' });
   }
 };
 
-const removeTask = async (req, res) => {
+// Edit task
+exports.editTask = async (req, res) => {
   try {
-    const result = await taskService.deleteTask(req.params.id);
-    res.json(result);
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.json(updatedTask);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to update task' });
   }
 };
 
-module.exports = {
-  getTasks,
-  createTask,
-  editTask,
-  removeTask,
+// Delete task
+exports.removeTask = async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Task deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
 };
